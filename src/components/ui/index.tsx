@@ -131,9 +131,10 @@ interface BadgeProps {
   children: ReactNode;
   variant?: 'primary' | 'success' | 'warning' | 'neutral' | 'error';
   size?: 'sm' | 'md';
+  className?: string;
 }
 
-export function Badge({ children, variant = 'primary', size = 'sm' }: BadgeProps) {
+export function Badge({ children, variant = 'primary', size = 'sm', className = '' }: BadgeProps) {
   const colors: Record<string, string> = {
     primary: 'bg-primary-50 text-primary-600 border-primary-200',
     success: 'bg-tertiary-50 text-tertiary-600 border-tertiary-200',
@@ -142,7 +143,7 @@ export function Badge({ children, variant = 'primary', size = 'sm' }: BadgeProps
     error: 'bg-red-50 text-red-600 border-red-200',
   };
   return (
-    <span className={`inline-flex items-center font-label font-semibold uppercase tracking-wider rounded-full border ${colors[variant]} ${size === 'sm' ? 'px-2.5 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'}`}>
+    <span className={`inline-flex items-center font-label font-semibold uppercase tracking-wider rounded-full border ${colors[variant]} ${size === 'sm' ? 'px-2.5 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} ${className}`.trim()}>
       {children}
     </span>
   );

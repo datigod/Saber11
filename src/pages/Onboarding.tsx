@@ -502,7 +502,7 @@ export default function Onboarding() {
                     
                     {percentileData && (
                       <motion.div 
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} delay={0.5}
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
                         className="mt-6 bg-surface-50 border border-surface-200 rounded-xl p-5 text-center shadow-sm"
                       >
                         <p className="text-sm text-surface-600 mb-2">Comparativa Nacional Oficial (2018)</p>
