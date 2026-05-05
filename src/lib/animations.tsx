@@ -1,15 +1,15 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Transition, type Variants } from 'framer-motion';
 import { ReactNode } from 'react';
 
 // ── Page transition wrapper ────────────────────────────────
-export const pageVariants = {
+export const pageVariants: Variants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -10 },
 };
 
-export const pageTransition = {
-  type: 'spring' as const,
+export const pageTransition: Transition = {
+  type: 'spring',
   stiffness: 300,
   damping: 30,
 };
@@ -29,7 +29,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
 }
 
 // ── Stagger container ──────────────────────────────────────
-export const staggerContainer = {
+export const staggerContainer: Variants = {
   animate: {
     transition: {
       staggerChildren: 0.08,
@@ -38,7 +38,7 @@ export const staggerContainer = {
   },
 };
 
-export const staggerItem = {
+export const staggerItem: Variants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 25 } },
 };
