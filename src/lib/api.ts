@@ -81,6 +81,17 @@ export async function predict(features: PredictionFeatures): Promise<PredictionR
   return res.json();
 }
 
+export async function validateModelFeatures(features: PredictionFeatures): Promise<void> {
+  const info = await getApiInfo();
+  const required = new Set([...info.features_numericas, ...info.features_categoricas]);
+  const payloadKeys = Object.keys(features);
+  const missing = [...required].filter((key) => !payloadKeys.includes(key));
+
+  if (missing.length > 0) {
+    throw new Error(`Incompatibilidad con el modelo ML: faltan variables (${missing.join(', ')})`);
+  }
+}
+
 export async function getDashboardStats(filters: { 
   year?: string; 
   naturaleza?: string;
