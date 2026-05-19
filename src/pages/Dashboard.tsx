@@ -200,13 +200,13 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="font-heading font-extrabold text-xl tracking-tight flex items-center gap-2">
-                      Tu Proyección IA vs Regional
+                      Tu Proyección Estimada vs Regional
                       <Badge variant="success" size="sm" className="bg-success-500/25 text-success-300 border-none font-bold">ACTIVA</Badge>
                     </h3>
                     <p className="text-sm text-surface-300 mt-1 max-w-lg">
                       {userPrediction.score >= stats.promedio_global 
                         ? `¡Excelente! Estás superando el promedio de Bogotá en +${(userPrediction.score - stats.promedio_global).toFixed(0)} puntos.`
-                        : `Estás a ${(stats.promedio_global - userPrediction.score).toFixed(0)} puntos de alcanzar el promedio regional de Bogotá. ¡El Tutor IA te guiará!`
+                        : `Estás a ${(stats.promedio_global - userPrediction.score).toFixed(0)} puntos de alcanzar el promedio regional de Bogotá. ¡La ruta sugerida te guiará!`
                       }
                     </p>
                   </div>

@@ -8,7 +8,7 @@ const features = [
   { icon: Map, title: 'Ruta Personalizada', desc: 'Plan de estudio adaptado a tu contexto, recursos y metas académicas.' },
   { icon: Swords, title: 'Retos Diarios', desc: 'Desafíos gamificados que fortalecen tus competencias día a día.' },
   { icon: BookOpen, title: 'Práctica Inteligente', desc: 'Preguntas tipo Saber 11 con retroalimentación inmediata.' },
-  { icon: BarChart3, title: 'Predicción IA', desc: 'Modelo CatBoost que estima tu puntaje y orienta tu preparación.' },
+  { icon: BarChart3, title: 'Modelo Predictivo', desc: 'Modelo CatBoost que estima tu puntaje y orienta tu preparación.' },
   { icon: Users, title: 'Panel Docente', desc: 'Herramientas para acompañar y orientar a tus estudiantes.' },
   { icon: Shield, title: 'Uso Responsable', desc: 'No clasificamos estudiantes. Recomendamos apoyos para potenciar el aprendizaje.' },
 ];
@@ -25,16 +25,6 @@ export default function Landing() {
 
         <div className="relative max-w-[1280px] mx-auto px-4 md:px-8 pt-32 pb-20 lg:pt-40 lg:pb-28">
           <div className="max-w-3xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-50 border border-primary-200 text-primary-600 text-sm font-medium mb-6"
-            >
-              <Sparkles className="w-4 h-4" />
-              Potenciado con Inteligencia Artificial
-            </motion.div>
-
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}

@@ -231,7 +231,7 @@ export function Sidebar() {
             </div>
             <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider opacity-90">
               <span className="w-1.5 h-1.5 rounded-full bg-success-400 animate-ping"></span>
-              Proyección IA
+              Proyección Estimada
             </div>
             <div className="flex items-baseline gap-1 mt-1.5">
               <span className="text-3.5xl font-heading font-extrabold tracking-tight">{prediction.score}</span>
@@ -244,7 +244,7 @@ export function Sidebar() {
               to="/ruta"
               className="mt-3 block text-center py-2 px-3 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-xs font-bold rounded-xl border border-white/10"
             >
-              🧠 Consultar Tutor IA
+              🗺️ Ver Mi Ruta
             </Link>
           </motion.div>
         ) : (
@@ -252,8 +252,8 @@ export function Sidebar() {
             to="/onboarding"
             className="block w-full p-4 rounded-xl gradient-primary text-white text-center shadow-lg hover:shadow-xl transition-shadow"
           >
-            <p className="font-heading font-bold text-sm">🎯 Predice tu puntaje</p>
-            <p className="text-xs opacity-80 mt-1">Usa nuestro modelo IA</p>
+            <p className="font-heading font-bold text-sm">🎯 Predecir puntaje</p>
+            <p className="text-xs opacity-80 mt-1">Usa nuestro modelo predictivo</p>
           </Link>
         )}
       </div>
