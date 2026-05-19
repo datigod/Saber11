@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { useMemo, useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
-  Target, Clock, Flame, BookOpen, Calculator, ChevronRight, 
-  Sparkles, Send, Bot, User, RefreshCw, HelpCircle, GraduationCap 
+  Target, Clock, Flame, BookOpen, Calculator,
+  Sparkles, CheckCircle2, Circle, Compass, RefreshCw, Award
 } from 'lucide-react';
 import { Card, StatCard, Badge, ProgressBar, Button, SectionHeader } from '../components/ui';
 import { PageTransition, FadeInView, staggerContainer, staggerItem } from '../lib/animations';
@@ -15,11 +15,13 @@ type RouteProfile = {
   trend: string;
 };
 
-type Message = {
+type ActionStep = {
   id: string;
-  sender: 'ai' | 'user';
-  text: string;
-  timestamp: Date;
+  title: string;
+  focus: string;
+  description: string;
+  actions: string[];
+  meta: string;
 };
 
 const getRouteProfile = (score: number): RouteProfile => {
@@ -73,6 +75,165 @@ const getRouteProfile = (score: number): RouteProfile => {
   };
 };
 
+const getActionStepsForScore = (score: number): ActionStep[] => {
+  if (score < 260) {
+    return [
+      {
+        id: 'step_1',
+        title: 'Paso 1: Construcción del Hábito Diario',
+        focus: 'Construir consistencia',
+        description: 'La clave para subir un puntaje bajo es la práctica diaria constante, no estudiar 5 horas seguidas un día antes del examen.',
+        actions: [
+          'Completa el "Reto Diario" de 3 preguntas todas las mañanas al despertar.',
+          'Revisa las explicaciones de cada respuesta del reto, especialmente en las que te equivoques.',
+          'Consigue una racha de 7 días activos seguidos en tu perfil para consolidar el hábito.'
+        ],
+        meta: 'Meta: 7 días de racha activa en la plataforma.'
+      },
+      {
+        id: 'step_2',
+        title: 'Paso 2: Competencia de Lectura Crítica (Nivel Literal)',
+        focus: 'Comprensión de lectura base',
+        description: 'En el examen, más del 50% de las preguntas de todas las áreas dependen directamente de entender qué dice el texto.',
+        actions: [
+          'Lee al menos un texto corto al día de periódicos o guías académicas.',
+          'Escribe en una sola frase cuál es la tesis principal (la idea que defiende el autor).',
+          'Utiliza el diccionario o pide ayuda con cualquier vocabulario o palabra que no entiendas.'
+        ],
+        meta: 'Meta: Entender la postura de un autor en menos de 3 minutos por texto.'
+      },
+      {
+        id: 'step_3',
+        title: 'Paso 3: Dominio de Números y Proporciones Básicas',
+        focus: 'Matemáticas esenciales',
+        description: 'Enfoca tus esfuerzos en los temas más rentables de matemáticas que siempre se evalúan y son sencillos.',
+        actions: [
+          'Domina la regla de tres simple (directa e inversa) para resolver problemas de proporciones.',
+          'Practica el cálculo mental rápido de porcentajes comunes (10%, 25%, 50%).',
+          'Entrena la lectura e interpretación de gráficos de barras simples y tablas de datos.'
+        ],
+        meta: 'Meta: Responder correctamente todas las preguntas de lectura de gráficos en el módulo de Práctica.'
+      },
+      {
+        id: 'step_4',
+        title: 'Paso 4: Simulación de Preguntas sin Medición de Tiempo',
+        focus: 'Entrenamiento de precisión',
+        description: 'Antes de preocuparte por la velocidad, asegúrate de responder de manera correcta analizando despacio cada enunciado.',
+        actions: [
+          'Realiza bloques semanales de 10 preguntas continuas en el módulo de Práctica.',
+          'No uses cronómetro; tómate todo el tiempo necesario para leer cada opción de respuesta.',
+          'Justifica en tu mente por qué las otras 3 opciones son falsas antes de marcar la correcta.'
+        ],
+        meta: 'Meta: Lograr un 70% de precisión en tus sesiones de práctica individuales.'
+      }
+    ];
+  }
+
+  if (score < 330) {
+    return [
+      {
+        id: 'step_1',
+        title: 'Paso 1: Lectura Activa e Inferencial',
+        focus: 'Lectura crítica intermedia',
+        description: 'Sube tu nivel pasando de la comprensión literal a inferir la postura oculta del autor y evaluar argumentos.',
+        actions: [
+          'Lee las preguntas antes de comenzar a leer el texto completo para saber qué buscar.',
+          'Entrena con textos discontinuos (caricaturas académicas, infografías y cómics) en Lectura Crítica.',
+          'Aprende a identificar la ironía, contradicciones o supuestos implícitos en las lecturas.'
+        ],
+        meta: 'Meta: Reconocer la intención e ironía en textos de opinión complejos.'
+      },
+      {
+        id: 'step_2',
+        title: 'Paso 2: Modelación Matemática y Álgebra Práctica',
+        focus: 'Álgebra y geometría aplicada',
+        description: 'Consolida la capacidad de traducir problemas verbales a fórmulas matemáticas del mundo real.',
+        actions: [
+          'Practica plantear ecuaciones lineales a partir de textos descriptivos.',
+          'Repasa las propiedades básicas de figuras geométricas comunes (triángulos rectángulos, áreas y perímetros).',
+          'Domina el uso del Teorema de Pitágoras en problemas de modelación espacial.'
+        ],
+        meta: 'Meta: Plantear y resolver la ecuación de un problema en menos de 2 minutos.'
+      },
+      {
+        id: 'step_3',
+        title: 'Paso 3: Bitácora de Errores Activa',
+        focus: 'Aprender de las fallas',
+        description: 'La forma más rápida de romper el techo de los 300 puntos es analizar detalladamente cada pregunta fallada.',
+        actions: [
+          'Anota cada pregunta incorrecta de tus prácticas en una libreta o bloc de notas.',
+          'Escribe a mano la explicación de por qué la opción correcta es la adecuada y por qué fallaste.',
+          'Vuelve a resolver las mismas preguntas falladas 3 días después para asegurar que aprendiste el concepto.'
+        ],
+        meta: 'Meta: Reducir a la mitad la repetición de errores del mismo concepto.'
+      },
+      {
+        id: 'step_4',
+        title: 'Paso 4: Simulacros por Sección con Gestión de Tiempo',
+        focus: 'Control del reloj',
+        description: 'Entrena a tu cerebro para resolver la prueba bajo las mismas restricciones de tiempo del examen real.',
+        actions: [
+          'Realiza prácticas cortas de 15 preguntas de una sola materia.',
+          'Ponte un límite estricto de 2 minutos por pregunta (30 minutos en total por sesión).',
+          'Aprende a saltar o marcar una respuesta tentativa en preguntas muy difíciles para no perder tiempo.'
+        ],
+        meta: 'Meta: Terminar las 15 preguntas dentro del tiempo establecido con más del 75% de acierto.'
+      }
+    ];
+  }
+
+  return [
+    {
+      id: 'step_1',
+      title: 'Paso 1: Análisis Filosófico y Textos Complejos',
+      focus: 'Lectura crítica de alto nivel',
+      description: 'Logra el puntaje perfecto en Lectura Crítica entrenando tu mente con textos de alta complejidad filosófica.',
+      actions: [
+        'Lee y analiza extractos de ensayos de filosofía clásica o artículos de divulgación científica densos.',
+        'Busca e identifica falacias lógicas comunes en discursos argumentativos.',
+        'Practica contrastar las opiniones de dos autores diferentes sobre el mismo tema.'
+      ],
+      meta: 'Meta: Resolver textos densos sin perder concentración y con precisión perfecta.'
+    },
+    {
+      id: 'step_2',
+      title: 'Paso 2: Velocidad de Resolución y Técnicas de Descarte Rápido',
+      focus: 'Matemáticas y Ciencias avanzadas',
+      description: 'Gana valioso tiempo en el examen real descartando opciones con agilidad mediante deducción lógica extrema.',
+      actions: [
+        'Resuelve problemas de razonamiento cuantitativo eliminando opciones extremas o inconsistentes.',
+        'Prueba valores hipotéticos rápidos en las variables de las opciones de respuesta para validar ecuaciones.',
+        'Repasa conceptos avanzados de química, física y biología (reacciones químicas, genética, conservación de la energía).'
+      ],
+      meta: 'Meta: Promediar 1 minuto y 20 segundos por pregunta de matemáticas.'
+    },
+    {
+      id: 'step_3',
+      title: 'Paso 3: Entrenamiento de Resistencia Física y Mental',
+      focus: 'Combate la fatiga del examen',
+      description: 'El Saber 11 dura más de 9 horas en total. La fatiga al final de cada sesión reduce la precisión en un 15% si no te entrenas.',
+      actions: [
+        'Realiza bloques ininterrumpidos de 40 a 50 preguntas seguidas de múltiples áreas los fines de semana.',
+        'Simula el ambiente real: apaga tu música, tu celular y mantente sentado concentrado toda la sesión.',
+        'Aprende técnicas de respiración profunda para oxigenar tu cerebro y mantener el enfoque en las últimas preguntas.'
+      ],
+      meta: 'Meta: Mantener el mismo porcentaje de aciertos en la primera y última pregunta de un bloque largo.'
+    },
+    {
+      id: 'step_4',
+      title: 'Paso 4: Aprendizaje por Enseñar (Técnica Feynman)',
+      focus: 'Consolidación total del conocimiento',
+      description: 'Explicar de forma simple un concepto complejo a otros es la mejor forma de asegurar que tú lo dominas a la perfección.',
+      actions: [
+        'Lidera o crea un círculo de estudio con tus compañeros de clase que necesiten mejorar.',
+        'Explícales los temas que dominas (como matemáticas o inglés) de la manera más sencilla posible.',
+        'Pídeles que te hagan preguntas difíciles y trata de responder usando ejemplos sencillos de la vida diaria.'
+      ],
+      meta: 'Meta: Explicar un problema difícil a alguien que no lo entienda hasta que le quede claro.'
+    }
+  ];
+};
+
 export default function MyRoute() {
   const predictedScore = useMemo(() => {
     const raw = localStorage.getItem('saber11_prediction');
@@ -85,175 +246,36 @@ export default function MyRoute() {
     }
   }, []);
 
-  const studentFeatures = useMemo(() => {
-    const raw = localStorage.getItem('saber11_features');
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  }, []);
-
   const profile = useMemo(() => getRouteProfile(predictedScore), [predictedScore]);
+  const actionSteps = useMemo(() => getActionStepsForScore(predictedScore), [predictedScore]);
 
-  // AI Tutor States
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Persistent checklist state
+  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
 
-  // Inicializar conversación con el Tutor IA
   useEffect(() => {
-    setIsTyping(true);
-    const timer = setTimeout(() => {
-      const name = studentFeatures?.ESTU_GENERO === 'F' ? 'estudiante' : 'estudiante';
-      const welcomeText = `¡Hola! Soy tu **Tutor Académico Inteligente**. 🧠✨
-
-He analizado los resultados de la predicción y veo que tu puntaje estimado es de **${predictedScore} puntos**.
-
-Basado en tu perfil escolar y familiar, he diseñado tu **${profile.title}**. ¿Quieres que te explique detalladamente qué factores influyeron en tu puntaje o prefieres que armemos un plan de estudio acelerado?`;
-
-      setMessages([
-        {
-          id: 'welcome',
-          sender: 'ai',
-          text: welcomeText,
-          timestamp: new Date()
-        }
-      ]);
-      setIsTyping(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [predictedScore, studentFeatures, profile.title]);
-
-  // Auto Scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
-  const generateAIResponse = (userText: string): string => {
-    const text = userText.toLowerCase();
-
-    // 1. Explicación de la estimación
-    if (text.includes('explicaci') || text.includes('factores') || text.includes('estimaci') || text.includes('por qué') || text.includes('por que')) {
-      const colegNaturaleza = studentFeatures?.COLE_NATURALEZA || 'Oficial';
-      const internet = studentFeatures?.FAMI_TIENEINTERNET || 'SI';
-      const pc = studentFeatures?.FAMI_TIENECOMPUTADOR || 'SI';
-      const coleMean = studentFeatures?.COLE_MEAN_SCORE || 250;
-
-      return `### 🔍 Diagnóstico del Modelo Predictivo (CatBoost)
-
-Tu estimación de **${predictedScore} puntos** se calculó analizando múltiples variables. Aquí están los factores clave que el modelo identificó:
-
-1. **Contexto de tu Institución (Impacto: Alto):** Tu colegio tiene un promedio de referencia de **${coleMean} puntos**. El modelo utiliza este dato como ancla base.
-2. **Entorno Digital (Impacto: Medio-Alto):** Tienes acceso a **Internet: ${internet}** y **Computador: ${pc}**. Contar con estas herramientas digitales según nuestro modelo de IA suma una ventaja de aproximadamente **+15 a +25 puntos** frente a estudiantes que no disponen de ellos, al facilitar el acceso a simulacros en línea.
-3. **Naturaleza Escolar (Impacto: Medio):** Estudiar en un colegio de sector **${colegNaturaleza}** ajusta la curva estadística nacional.
-
-**💡 Mi recomendación de Tutor:** Aunque el entorno socioeducativo influye estadísticamente en los modelos de predicción masivos, el estudio activo e individual en la plataforma puede **romper el promedio del colegio y aumentar tu resultado hasta en +80 puntos**. ¡Vamos a lograrlo!`;
-    }
-
-    // 2. Subir puntos en matemáticas
-    if (text.includes('matemat') || text.includes('mate') || text.includes('números') || text.includes('calculo')) {
-      return `### 📐 Plan de Aceleración de Matemáticas (+30 puntos)
-
-Para dar un salto gigante en Matemáticas de cara a la prueba Saber 11, enfoquémonos en los tres pilares evaluados por el ICFES:
-
-1. **Interpretación y Representación (40% de la prueba):**
-   * **Estrategia:** No te limites a resolver ecuaciones. Practica interpretar gráficos de barras, circulares y tablas de datos. ¡Siempre hay de 3 a 5 preguntas de pura lectura de gráficos!
-2. **Formulación y Ejecución (45% de la prueba):**
-   * **Estrategia:** Domina la **regla de tres simple y compuesta**, el **cálculo de porcentajes** y los conceptos básicos de probabilidad. Son las herramientas más rentables para responder rápido.
-3. **Razonamiento Cuantitativo:**
-   * **Estrategia:** Aprende a descartar opciones absurdas. Por ejemplo, en preguntas de geometría, muchas respuestas pueden eliminarse simplemente comparando proporciones visuales.
-
-**🛠️ Acción inmediata:** Ve a la sección **Práctica** y selecciona el módulo de **Matemáticas: Estadística Básica**.`;
-    }
-
-    // 3. Plan de Lectura Crítica
-    if (text.includes('lectura') || text.includes('lenguaje') || text.includes('escribir') || text.includes('textos')) {
-      return `### 📚 Método de Lectura Crítica de Alto Rendimiento
-
-La prueba de Lectura Crítica requiere resistencia física y mental. El plan ideal para tu nivel consta de estas fases:
-
-1. **Fase 1: Lectura Activa (Durante el simulacro):**
-   * No leas el texto de corrido de una sola vez. **Primero lee las preguntas**. Así sabrás exactamente qué buscar (ej. opiniones del autor, contradicciones, palabras clave) cuando leas el texto.
-2. **Fase 2: Identificación de Tipos de Texto:**
-   * *Continuos (Novelas, Ensayos):* Busca la tesis principal en el primer y último párrafo.
-   * *Discontinuos (Caricaturas, Infografías):* Analiza la relación entre el dibujo/gráfico y las palabras. El humor o la ironía suelen ser la clave de la pregunta.
-3. **Fase 3: La Técnica de descarte lógico:**
-   * Las opciones incorrectas suelen ser "demasiado extremas" (usan palabras como *siempre*, *nunca*, *absolutamente*) o mezclan información del texto pero sacan conclusiones falsas.
-
-**🎯 Reto para esta semana:** Dedica **15 minutos diarios** a leer editoriales de periódicos de opinión y trata de resumir la postura del autor en una sola frase. ¡Esto entrenará tu cerebro al instante!`;
-    }
-
-    // 4. Pocos recursos o tiempo
-    if (text.includes('recurso') || text.includes('tiempo') || text.includes('horario') || text.includes('organizar') || text.includes('estudiar')) {
-      const pc = studentFeatures?.FAMI_TIENECOMPUTADOR || 'SI';
-      const tieneInternet = studentFeatures?.FAMI_TIENEINTERNET || 'SI';
-
-      let extraTip = "";
-      if (pc === 'NO' || tieneInternet === 'NO') {
-        extraTip = `* **Uso Offline:** Puedes descargar las guías PDF del ICFES cuando tengas red pública o en el colegio, y resolverlas en tu celular en modo avión. ¡El estudio sin distracciones es 2 veces más rápido!`;
-      } else {
-        extraTip = `* **Bloques Pomodoro:** Estudia en bloques de 25 minutos muy enfocados, seguidos de 5 minutos de descanso. Es ideal si estudias después de la jornada escolar escolar o trabajas.`;
+    const saved = localStorage.getItem(`completed_steps_${predictedScore}`);
+    if (saved) {
+      try {
+        setCompletedSteps(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
       }
-
-      return `### ⏰ Planificación Estratégica de Tiempo y Recursos
-
-No necesitas estudiar 6 horas al día para obtener un excelente puntaje. Lo que necesitas es **consistencia**. Aquí está tu micro-esquema semanal adaptado:
-
-* **Lunes a Viernes (El hábito):** Dedica solo **20 minutos diarios** a resolver el **Reto Diario** en la plataforma. Esto mantendrá tu cerebro activo y construirá memoria a largo plazo.
-* **Sábados (El análisis):** Dedica **1 hora** a revisar las preguntas que respondiste mal durante la semana. Entender *por qué* te equivocaste vale más que responder 100 preguntas nuevas de forma automática.
-${extraTip}
-* **Bibliotecas Públicas / Colegios:** Aprovecha las herramientas de simulacro de la plataforma que guardan tu progreso. Todo lo que hagas en tu celular se guardará automáticamente en tu perfil.`;
     }
+  }, [predictedScore]);
 
-    // 5. Default/Custom
-    return `¡Excelente pregunta! Como tu **Tutor Académico IA**, te sugiero abordar esto con una estrategia paso a paso. 
-
-Para darte una respuesta de precisión milimétrica:
-* ¿Te gustaría que nos enfoquemos en mejorar alguna materia en específico (Matemáticas, Lectura Crítica, Ciencias Naturales, Sociales o Inglés)?
-* ¿O prefieres que hagamos un simulacro interactivo rápido con preguntas reales aquí mismo?
-
-Dime cuál es tu materia más difícil y te daré un truco inmediato para resolver sus preguntas difíciles. 🚀`;
+  const toggleStep = (stepId: string) => {
+    const updated = completedSteps.includes(stepId)
+      ? completedSteps.filter(id => id !== stepId)
+      : [...completedSteps, stepId];
+    
+    setCompletedSteps(updated);
+    localStorage.setItem(`completed_steps_${predictedScore}`, JSON.stringify(updated));
   };
 
-  const handleSendMessage = (textToSend = inputValue) => {
-    const trimmed = textToSend.trim();
-    if (!trimmed) return;
-
-    // Agregar mensaje del usuario
-    const userMsg: Message = {
-      id: Math.random().toString(),
-      sender: 'user',
-      text: trimmed,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMsg]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simular retraso de la IA (efecto premium de escritura)
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(trimmed);
-      setMessages(prev => [...prev, {
-        id: Math.random().toString(),
-        sender: 'ai',
-        text: aiResponse,
-        timestamp: new Date()
-      }]);
-      setIsTyping(false);
-    }, 1200);
-  };
-
-  const quickQuestions = [
-    { text: '🔍 ¿Por qué tengo este puntaje estimado?', short: 'Explicación detallada de mi estimación' },
-    { text: '📐 ¿Cómo subo +30 pts en Matemáticas?', short: 'Estrategias clave para Matemáticas' },
-    { text: '📚 Plan de Lectura Crítica', short: 'Plan estructurado de Lectura' },
-    { text: '⏰ ¿Cómo organizo mi horario de estudio?', short: 'Organizar mi tiempo de estudio' },
-  ];
+  const planProgress = useMemo(() => {
+    if (actionSteps.length === 0) return 0;
+    return (completedSteps.length / actionSteps.length) * 100;
+  }, [completedSteps, actionSteps]);
 
   return (
     <PageTransition>
@@ -334,152 +356,125 @@ Dime cuál es tu materia más difícil y te daré un truco inmediato para resolv
           </FadeInView>
         </div>
 
-        {/* AI Tutor Chatbot Integration (premium & stunning visual layout) */}
+        {/* Personalized Actions Steps */}
         <FadeInView delay={0.2}>
           <div className="relative rounded-3xl border border-primary-200/60 shadow-xl overflow-hidden bg-white mb-8">
             <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary-500 via-indigo-500 to-primary-600"></div>
             
-            {/* AI Coach Header */}
-            <div className="p-5 border-b border-surface-200 flex items-center justify-between bg-gradient-to-b from-primary-50/50 to-white">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary-500 to-indigo-600 flex items-center justify-center text-white shadow-md relative">
-                  <Bot className="w-6 h-6 animate-pulse" />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-success-400 border-2 border-white"></span>
+            {/* Header */}
+            <div className="p-6 border-b border-surface-200 bg-gradient-to-b from-primary-50/50 to-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                    <Compass className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-bold text-surface-900 text-lg flex items-center gap-2">
+                      Plan de Acción de Ruta Personalizada
+                      <Badge variant="primary" size="sm">ACTIVO</Badge>
+                    </h3>
+                    <p className="text-xs text-surface-500">Pasos prácticos requeridos según tu puntaje estimado de {predictedScore} puntos</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-heading font-bold text-surface-900 flex items-center gap-1.5">
-                    Orientador Académico IA
-                    <Badge variant="primary" size="sm" className="bg-primary-100 text-primary-800 font-bold border-none">INTEGRADO</Badge>
-                  </h3>
-                  <p className="text-xs text-surface-500">Coach personalizado basado en tu modelo predictivo CatBoost</p>
+                
+                {/* Progress Circle/Pill */}
+                <div className="flex items-center gap-2.5 bg-primary-50 px-3.5 py-2 rounded-2xl border border-primary-100 self-start sm:self-center shrink-0">
+                  <Award className="w-4 h-4 text-primary-600" />
+                  <span className="text-xs font-bold text-primary-800">
+                    {completedSteps.length} / {actionSteps.length} Pasos Completados
+                  </span>
                 </div>
               </div>
-              <div title="El Tutor analiza tus datos socioeducativos para darte las mejores estrategias" className="cursor-help">
-                <HelpCircle className="w-5 h-5 text-surface-400 hover:text-primary-500 transition-colors" />
+              
+              {/* Progress bar of the roadmap */}
+              <div className="mt-5">
+                <div className="flex justify-between text-xs font-bold text-surface-500 mb-1.5 px-0.5">
+                  <span>Progreso de la Ruta</span>
+                  <span>{Math.round(planProgress)}%</span>
+                </div>
+                <ProgressBar value={planProgress} max={100} color="gradient" />
               </div>
             </div>
 
-            {/* Chat Messages Log */}
-            <div className="h-96 overflow-y-auto p-6 bg-surface-50/30 flex flex-col gap-4">
-              <AnimatePresence initial={false}>
-                {messages.map((msg) => (
+            {/* Steps Checklist Grid */}
+            <div className="p-6 sm:p-8 bg-surface-50/30 space-y-6">
+              {actionSteps.map((step, idx) => {
+                const isCompleted = completedSteps.includes(step.id);
+                
+                return (
                   <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className={`flex gap-3 max-w-[85%] ${msg.sender === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
+                    key={step.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className={`p-6 rounded-2xl border transition-all duration-300 ${
+                      isCompleted 
+                        ? 'bg-emerald-50/30 border-emerald-200/60 shadow-sm' 
+                        : 'bg-white border-surface-200 hover:border-primary-300 hover:shadow-md'
+                    }`}
                   >
-                    {/* Icon */}
-                    <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center shadow-sm text-xs font-semibold ${
-                      msg.sender === 'user' ? 'bg-indigo-100 text-indigo-700' : 'bg-primary-500 text-white'
-                    }`}>
-                      {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                    </div>
-
-                    {/* Speech bubble */}
-                    <div className={`p-4 rounded-2xl shadow-sm border text-sm leading-relaxed ${
-                      msg.sender === 'user'
-                        ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white border-primary-500 rounded-tr-none'
-                        : 'bg-white text-surface-800 border-surface-200 rounded-tl-none font-normal'
-                    }`}>
-                      {/* Formateador básico de markdown para títulos y negrita */}
-                      <div className="prose prose-sm max-w-none break-words">
-                        {msg.text.split('\n').map((line, idx) => {
-                          let formattedLine = line;
-                          // Encabezados h3
-                          if (formattedLine.startsWith('### ')) {
-                            return <h4 key={idx} className="font-bold text-surface-900 mt-2 mb-1.5 flex items-center gap-1.5">{formattedLine.replace('### ', '')}</h4>;
-                          }
-                          // Negritas y listas
-                          const boldRegex = /\*\*(.*?)\*\*/g;
-                          const parts = [];
-                          let lastIdx = 0;
-                          let match;
-                          while ((match = boldRegex.exec(formattedLine)) !== null) {
-                            if (match.index > lastIdx) {
-                              parts.push(formattedLine.substring(lastIdx, match.index));
-                            }
-                            parts.push(<strong key={match.index} className={msg.sender === 'user' ? 'text-white font-extrabold' : 'text-primary-800 font-bold'}>{match[1]}</strong>);
-                            lastIdx = boldRegex.lastIndex;
-                          }
-                          if (lastIdx < formattedLine.length) {
-                            parts.push(formattedLine.substring(lastIdx));
-                          }
-                          
-                          const displayContent = parts.length > 0 ? parts : formattedLine;
-
-                          if (formattedLine.startsWith('* ') || formattedLine.startsWith('- ')) {
-                            return <li key={idx} className="ml-4 list-disc pl-1 py-0.5">{displayContent}</li>;
-                          }
-                          if (/^\d+\./.test(formattedLine)) {
-                            return <div key={idx} className="ml-2 pl-1 py-1 font-medium">{displayContent}</div>;
-                          }
-                          return <p key={idx} className="mb-1.5 last:mb-0 min-h-[0.5rem]">{displayContent}</p>;
-                        })}
+                    <div className="flex items-start gap-4">
+                      {/* Checkbox button */}
+                      <button
+                        type="button"
+                        onClick={() => toggleStep(step.id)}
+                        className={`mt-1 shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                          isCompleted 
+                            ? 'bg-emerald-500 text-white scale-110 shadow-md shadow-emerald-500/20' 
+                            : 'border-2 border-surface-300 text-transparent hover:border-primary-500'
+                        }`}
+                      >
+                        {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-4 h-4" />}
+                      </button>
+                      
+                      <div className="flex-1 min-w-0">
+                        {/* Title and Badge */}
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <h4 className={`font-heading font-bold text-base transition-colors ${
+                            isCompleted ? 'text-emerald-900 line-through opacity-75' : 'text-surface-900'
+                          }`}>
+                            {step.title}
+                          </h4>
+                          <Badge variant={isCompleted ? 'success' : 'primary'} size="sm" className="font-semibold">
+                            {step.focus}
+                          </Badge>
+                        </div>
+                        
+                        {/* Description */}
+                        <p className={`text-sm mb-4 leading-relaxed ${isCompleted ? 'text-emerald-700/70' : 'text-surface-700'}`}>
+                          {step.description}
+                        </p>
+                        
+                        {/* Sub-actions bullet checklist */}
+                        <div className={`p-4 rounded-xl border space-y-2.5 mb-4 ${
+                          isCompleted 
+                            ? 'bg-emerald-50/50 border-emerald-100/50' 
+                            : 'bg-surface-50 border-surface-200'
+                        }`}>
+                          <p className="text-xs font-extrabold uppercase tracking-wider text-surface-400">Acciones Concretas a Realizar:</p>
+                          <ul className="space-y-2">
+                            {step.actions.map((act, aIdx) => (
+                              <li key={aIdx} className="flex items-start gap-2 text-xs leading-relaxed text-surface-700">
+                                <span className={`mt-1 shrink-0 w-1.5 h-1.5 rounded-full ${
+                                  isCompleted ? 'bg-emerald-400' : 'bg-primary-500'
+                                }`}></span>
+                                <span className={isCompleted ? 'line-through opacity-70' : ''}>{act}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        {/* Meta badge */}
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-primary-600">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-ping"></span>
+                          <span>{step.meta}</span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
-                ))}
-
-                {/* Typing Indicator */}
-                {isTyping && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex gap-3 self-start max-w-[80%]"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center shrink-0">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                    <div className="px-4 py-3 bg-white border border-surface-200 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-sm">
-                      <span className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <div ref={messagesEndRef} />
+                );
+              })}
             </div>
-
-            {/* Quick Prompts Panel */}
-            <div className="px-6 py-4 bg-surface-50 border-t border-surface-200">
-              <p className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-2.5 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-primary-500" /> Consultar rápidamente:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {quickQuestions.map((q, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSendMessage(q.short)}
-                    className="px-3.5 py-2 text-xs font-medium text-surface-700 bg-white border border-surface-200 rounded-xl hover:border-primary-400 hover:text-primary-600 transition-all shadow-sm active:scale-95"
-                  >
-                    {q.text}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Message Input Form */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              className="p-4 bg-white border-t border-surface-200 flex gap-2"
-            >
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Escribe una pregunta a tu Tutor Académico IA... (ej: ¿cómo mejoro en inglés?)"
-                className="flex-1 px-4 py-3 text-sm border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 bg-surface-50/50 hover:bg-white focus:bg-white transition-all"
-              />
-              <Button type="submit" variant="primary" className="rounded-xl px-5 shadow-sm shrink-0" iconRight={Send}>
-                Preguntar
-              </Button>
-            </form>
           </div>
         </FadeInView>
 

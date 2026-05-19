@@ -1,13 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, ArrowLeft, Laptop, Wifi, Car, WashingMachine, GraduationCap, School, 
-  Brain, UserRound, Check, Home, Building2, Calendar, Clock, BookOpen, Star, User, Info, Sparkles 
+  Brain, UserRound, Check, Home, Building2, Calendar, Clock, BookOpen, Star, User, Info, Sparkles, Search 
 } from 'lucide-react';
 import { Button, Card, Badge, ProgressBar } from '../components/ui';
 import { PageTransition, FadeInView } from '../lib/animations';
 import { predict, getPercentile, getDefaultFeatures, categoricalOptions, validateModelFeatures, type PredictionFeatures, type PercentileInfo } from '../lib/api';
+import schoolsDb from '../assets/schools_database.json';
+
+interface SchoolData {
+  dane_code: string;
+  name: string;
+  city: string;
+  dept: string;
+  mean_score: number;
+}
 
 const steps = [
   { id: 1, title: 'Sobre ti', subtitle: 'Datos básicos', icon: User },
@@ -23,6 +32,37 @@ export default function Onboarding() {
   const [percentileData, setPercentileData] = useState<PercentileInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [schoolSearchQuery, setSchoolSearchQuery] = useState('');
+  const [selectedSchool, setSelectedSchool] = useState<SchoolData | null>(null);
+  const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
+  const [customSchoolEnabled, setCustomSchoolEnabled] = useState(false);
+
+  const filteredSchools = useMemo(() => {
+    if (!schoolSearchQuery.trim()) return [];
+    const query = schoolSearchQuery.toLowerCase();
+    return (schoolsDb as SchoolData[]).filter(s => 
+      s.name.toLowerCase().includes(query) ||
+      s.city.toLowerCase().includes(query) ||
+      s.dane_code.includes(query)
+    ).slice(0, 10);
+  }, [schoolSearchQuery]);
+
+  const handleSelectSchool = (school: SchoolData) => {
+    setSelectedSchool(school);
+    setSchoolSearchQuery(school.name);
+    setShowSchoolDropdown(false);
+    updateFeature('COLE_MEAN_SCORE', school.mean_score);
+  };
+
+  const handleToggleCustomSchool = (enabled: boolean) => {
+    setCustomSchoolEnabled(enabled);
+    if (enabled) {
+      setSelectedSchool(null);
+      setSchoolSearchQuery('');
+      updateFeature('COLE_MEAN_SCORE', 250);
+    }
+  };
 
   const updateFeature = (key: keyof PredictionFeatures, value: string | number) => {
     setFeatures(prev => ({ ...prev, [key]: value }));
@@ -456,14 +496,143 @@ export default function Onboarding() {
                   </div>
                 </div>
 
-                <ModernSlider 
-                  label="Referencia académica del colegio" 
-                  value={features.COLE_MEAN_SCORE}
-                  onChange={(v: number) => updateFeature('COLE_MEAN_SCORE', v)}
-                  min={100} max={450}
-                  showInput={true}
-                  tooltip="Si no conoces este dato, usa un valor sugerido intermedio (ej. 250)."
-                />
+                <div className="space-y-4 pt-4 border-t border-surface-150">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <label className="block font-bold text-surface-900 text-base">Colegio / Establecimiento Educativo</label>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleCustomSchool(!customSchoolEnabled)}
+                      className="text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors self-start sm:self-auto bg-primary-50 hover:bg-primary-100/70 px-3 py-1.5 rounded-lg border border-primary-100"
+                    >
+                      {customSchoolEnabled ? "🔍 Buscar en base de colegios" : "✏️ No encuentro mi colegio"}
+                    </button>
+                  </div>
+
+                  {!customSchoolEnabled ? (
+                    <div className="relative">
+                      <div className="flex items-center gap-3 border border-surface-200 focus-within:border-primary-500 bg-white rounded-xl px-4 py-3.5 shadow-sm transition-all duration-300">
+                        <Search className="w-5 h-5 text-surface-400 shrink-0" />
+                        <input
+                          type="text"
+                          value={schoolSearchQuery}
+                          onChange={e => {
+                            setSchoolSearchQuery(e.target.value);
+                            setShowSchoolDropdown(true);
+                            if (selectedSchool) {
+                              setSelectedSchool(null);
+                              updateFeature('COLE_MEAN_SCORE', 250);
+                            }
+                          }}
+                          onFocus={() => setShowSchoolDropdown(true)}
+                          placeholder="Escribe el nombre de tu colegio para calcular tu puntaje..."
+                          className="w-full bg-transparent border-none outline-none text-surface-800 placeholder-surface-400 font-semibold text-sm focus:ring-0 p-0"
+                        />
+                        {schoolSearchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSchoolSearchQuery('');
+                              setSelectedSchool(null);
+                              updateFeature('COLE_MEAN_SCORE', 250);
+                            }}
+                            className="text-xs font-bold text-surface-400 hover:text-surface-600 px-1 py-0.5 rounded"
+                          >
+                            Limpiar
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Dropdown list */}
+                      {showSchoolDropdown && schoolSearchQuery.trim().length > 0 && (
+                        <>
+                          <div className="absolute z-50 w-full mt-2 bg-white border border-surface-200 rounded-2xl shadow-xl max-h-64 overflow-y-auto divide-y divide-surface-150">
+                            {filteredSchools.length > 0 ? (
+                              filteredSchools.map(school => (
+                                <button
+                                  key={school.dane_code}
+                                  type="button"
+                                  onClick={() => handleSelectSchool(school)}
+                                  className="w-full px-4 py-3 text-left hover:bg-primary-50/50 flex flex-col gap-1 transition-all duration-200"
+                                >
+                                  <span className="font-heading font-bold text-surface-900 text-sm leading-snug">{school.name}</span>
+                                  <div className="flex justify-between items-center text-xs text-surface-500">
+                                    <span>📍 {school.city}, {school.dept}</span>
+                                    <span className="font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded text-[10px]">Promedio: {school.mean_score} pts</span>
+                                  </div>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-4 py-6 text-center text-sm text-surface-500 space-y-2">
+                                <p>No encontramos tu colegio con ese nombre.</p>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleCustomSchool(true)}
+                                  className="font-bold text-primary-600 hover:underline block mx-auto text-xs"
+                                >
+                                  ✏️ Ingresar datos manualmente
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {/* Overlay to close dropdown */}
+                          <div 
+                            className="fixed inset-0 z-40 bg-transparent" 
+                            onClick={() => setShowSchoolDropdown(false)}
+                          />
+                        </>
+                      )}
+
+                      {/* Selected School Info Card */}
+                      {selectedSchool ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-primary-50/30 via-white to-indigo-50/20 border border-primary-100 shadow-sm flex items-start gap-4"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-primary-100/70 flex items-center justify-center text-primary-600 shrink-0 shadow-sm">
+                            <School className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-heading font-bold text-surface-900 text-sm leading-snug">{selectedSchool.name}</h4>
+                            <p className="text-xs text-surface-500 mt-1">📍 {selectedSchool.city}, {selectedSchool.dept}</p>
+                            
+                            {/* Autocalculated Mean badge */}
+                            <div className="mt-3 flex flex-wrap items-center gap-3">
+                              <span className="bg-primary-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm">
+                                Promedio Histórico: {selectedSchool.mean_score} pts
+                              </span>
+                              <span className="text-[10px] text-surface-400 font-semibold italic">
+                                * Vinculado con el modelo CatBoost
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <div className="mt-2 text-xs text-surface-400 italic">
+                          * Selecciona un colegio de la lista para asignar automáticamente su nivel de rendimiento histórico.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-2xl bg-surface-50 border border-surface-150 flex gap-3">
+                        <Info className="w-5 h-5 text-primary-500 shrink-0 mt-0.5" />
+                        <p className="text-xs text-surface-600 leading-relaxed">
+                          Si tu colegio no está listado en nuestra base de datos histórica, puedes ingresar el puntaje promedio de referencia del colegio si lo conoces (máximo 390), o dejar el valor promedio sugerido (250).
+                        </p>
+                      </div>
+                      
+                      <ModernSlider 
+                        label="Puntaje Promedio de Referencia del Colegio" 
+                        value={features.COLE_MEAN_SCORE}
+                        onChange={(v: number) => updateFeature('COLE_MEAN_SCORE', v)}
+                        min={100} max={390}
+                        showInput={true}
+                        tooltip="Si no conoces este dato, deja el valor sugerido de 250."
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
