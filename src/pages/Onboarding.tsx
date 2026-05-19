@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Button, Card, Badge, ProgressBar } from '../components/ui';
 import { PageTransition, FadeInView } from '../lib/animations';
-import { predict, getPercentile, getDefaultFeatures, featureLabels, categoricalOptions, type PredictionFeatures, type PercentileInfo } from '../lib/api';
+import { predict, getPercentile, getDefaultFeatures, categoricalOptions, validateModelFeatures, type PredictionFeatures, type PercentileInfo } from '../lib/api';
 
 const steps = [
   { id: 1, title: 'Sobre ti', subtitle: 'Datos básicos', icon: User },
@@ -52,17 +52,29 @@ export default function Onboarding() {
         FAMI_ACCESO_DIGITAL: (tienePc && tieneInternet) ? 1 : 0,
       };
 
+      await validateModelFeatures(payload);
+
       // Add artificial delay for the loading modal UX
       await new Promise(resolve => setTimeout(resolve, 2500));
 
       const result = await predict(payload);
       const roundedPred = Math.round(result.prediccion_punt_global);
       setPrediction(roundedPred);
+      localStorage.setItem('saber11_prediction', JSON.stringify({
+        score: roundedPred,
+        percentile: percentileData?.percentil ?? null,
+        timestamp: new Date().toISOString(),
+      }));
       
       // Fetch percentile data asynchronously
       try {
         const perc = await getPercentile(roundedPred, '2018'); // Compare against 2018 by default
         setPercentileData(perc);
+        localStorage.setItem('saber11_prediction', JSON.stringify({
+          score: roundedPred,
+          percentile: perc.percentil,
+          timestamp: new Date().toISOString(),
+        }));
       } catch (err) {
         console.error("No se pudo obtener el percentil:", err);
       }
@@ -189,15 +201,20 @@ export default function Onboarding() {
             </span>
           )}
         </div>
-        <div className="relative pt-2 pb-1">
+        <div className="relative pt-3 pb-2">
+          <motion.div
+            className="absolute -top-2 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-300 pointer-events-none"
+            animate={{ left: `calc(${fillPercentage}% - 12px)` }}
+            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+          />
           <input
             type="range"
             value={value}
             onChange={e => onChange(Number(e.target.value))}
             min={min}
             max={max}
-            step="0.01"
-            className="w-full h-2.5 bg-surface-200 rounded-lg appearance-none cursor-pointer accent-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+            step="1"
+            className="w-full h-2.5 bg-surface-200 rounded-lg appearance-none cursor-pointer accent-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all duration-300"
             style={{
               background: `linear-gradient(to right, var(--color-primary-500) ${fillPercentage}%, var(--color-surface-200) ${fillPercentage}%)`
             }}
