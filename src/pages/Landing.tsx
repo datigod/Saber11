@@ -39,22 +39,22 @@ export default function Landing() {
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="flex flex-col gap-6"
+              className="flex flex-col"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1155F2]/10 text-[#1155F2] text-sm font-semibold border border-[#1155F2]/20 self-start">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1155F2]/10 text-[#1155F2] text-sm font-semibold border border-[#1155F2]/20 self-start mb-4">
                 <GraduationCap className="w-4 h-4" />
                 Tu preparación, tu futuro
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-extrabold text-[#0B2D6B] leading-[1.15]">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-extrabold text-[#0B2D6B] leading-[1.15] mb-6">
                 Prepárate mejor para <span className="text-[#1155F2]">Saber 11</span> con una ruta personalizada
               </h1>
               
-              <p className="text-lg text-surface-600 max-w-lg leading-relaxed">
+              <p className="text-lg text-surface-600 max-w-lg leading-relaxed mb-8">
                 Construye un plan de estudio a tu medida según tu contexto, tus recursos y tus metas. Accede a recursos de calidad, acompañamiento inteligente y seguimiento constante.
               </p>
               
-              <div className="flex flex-wrap items-center gap-4 mt-2">
+              <div className="flex flex-wrap items-center gap-4 mb-8">
                 <Link to="/onboarding">
                   <Button size="lg" className="bg-[#1155F2] hover:bg-[#0B2D6B] text-white shadow-lg shadow-[#1155F2]/25">
                     <Rocket className="w-5 h-5 mr-2" />
