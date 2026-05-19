@@ -4,6 +4,7 @@ import {
   Home, Map, Route, Swords, GraduationCap, User, Trophy, CalendarCheck,
   BookOpen, School, Building2, Info, Menu, X, Activity
 } from 'lucide-react';
+import { LogoIcon } from '../ui/LogoIcon';
 import { useState, useEffect } from 'react';
 
 const studentLinks = [
@@ -38,8 +39,8 @@ export function Navbar() {
       <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-surface-300/50">
         <div className="max-w-[1280px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <GraduationCap className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105">
+              <LogoIcon className="w-full h-full" />
             </div>
             <span className="font-heading text-lg font-bold text-primary-600 hidden sm:block">
               Ruta Saber 11
@@ -268,8 +269,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 flex items-center justify-center">
+                <LogoIcon className="w-full h-full" />
               </div>
               <span className="font-heading font-bold text-primary-600">Ruta Saber 11</span>
             </div>
