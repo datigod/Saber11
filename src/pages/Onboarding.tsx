@@ -60,6 +60,7 @@ export default function Onboarding() {
       const result = await predict(payload);
       const roundedPred = Math.round(result.prediccion_punt_global);
       setPrediction(roundedPred);
+      localStorage.setItem('saber11_features', JSON.stringify(payload));
       localStorage.setItem('saber11_prediction', JSON.stringify({
         score: roundedPred,
         percentile: percentileData?.percentil ?? null,

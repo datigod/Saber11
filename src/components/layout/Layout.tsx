@@ -4,7 +4,7 @@ import {
   Home, Map, Route, Swords, GraduationCap, User, Trophy, CalendarCheck,
   BookOpen, School, Building2, Info, Menu, X, Activity
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const studentLinks = [
   { to: '/', label: 'Inicio', icon: Home },
@@ -138,6 +138,35 @@ export function Sidebar() {
   const isDocente = location.pathname.startsWith('/docente') || location.pathname.startsWith('/institucional') || location.pathname === '/dashboard';
   const links = isDocente ? docenteLinks : studentLinks;
 
+  const [prediction, setPrediction] = useState<{ score: number; timestamp: string } | null>(null);
+
+  useEffect(() => {
+    const checkPrediction = () => {
+      const raw = localStorage.getItem('saber11_prediction');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.score === 'number') {
+            setPrediction(parsed);
+            return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setPrediction(null);
+    };
+
+    checkPrediction();
+    // Escuchar actualizaciones si cambian en otra pestaña o tras el onboarding
+    window.addEventListener('storage', checkPrediction);
+    const interval = setInterval(checkPrediction, 1000); // Check local updates quickly
+    return () => {
+      window.removeEventListener('storage', checkPrediction);
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <aside className="hidden lg:flex flex-col w-64 min-h-[calc(100vh-4rem)] fixed top-16 left-0 border-r border-surface-300/50 bg-white/80 backdrop-blur-lg p-4 gap-1 overflow-y-auto">
       <p className="text-xs font-semibold text-surface-700 uppercase tracking-wider px-3 mb-2 mt-2">
@@ -189,15 +218,44 @@ export function Sidebar() {
         </>
       )}
 
-      {/* Prediction CTA */}
+      {/* Dynamic AI Score Projection Card */}
       <div className="mt-auto pt-4">
-        <Link
-          to="/onboarding"
-          className="block w-full p-4 rounded-xl gradient-primary text-white text-center shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <p className="font-heading font-bold text-sm">🎯 Predice tu puntaje</p>
-          <p className="text-xs opacity-80 mt-1">Usa nuestro modelo IA</p>
-        </Link>
+        {!isDocente && prediction ? (
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="p-4 rounded-2xl bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 text-white shadow-lg relative overflow-hidden"
+          >
+            <div className="absolute -right-4 -bottom-4 opacity-10">
+              <Activity className="w-20 h-20 text-white" />
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider opacity-90">
+              <span className="w-1.5 h-1.5 rounded-full bg-success-400 animate-ping"></span>
+              Proyección IA
+            </div>
+            <div className="flex items-baseline gap-1 mt-1.5">
+              <span className="text-3.5xl font-heading font-extrabold tracking-tight">{prediction.score}</span>
+              <span className="text-xs opacity-75">/ 500 pts</span>
+            </div>
+            <div className="mt-2 w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
+              <div className="h-full bg-success-400" style={{ width: `${(prediction.score / 500) * 100}%` }}></div>
+            </div>
+            <Link
+              to="/ruta"
+              className="mt-3 block text-center py-2 px-3 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-xs font-bold rounded-xl border border-white/10"
+            >
+              🧠 Consultar Tutor IA
+            </Link>
+          </motion.div>
+        ) : (
+          <Link
+            to="/onboarding"
+            className="block w-full p-4 rounded-xl gradient-primary text-white text-center shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <p className="font-heading font-bold text-sm">🎯 Predice tu puntaje</p>
+            <p className="text-xs opacity-80 mt-1">Usa nuestro modelo IA</p>
+          </Link>
+        )}
       </div>
     </aside>
   );

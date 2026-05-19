@@ -5,15 +5,17 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts';
-import { Users, BookOpen, Building2, Filter, Activity, TrendingUp, Trophy } from 'lucide-react';
+import { Users, BookOpen, Building2, Filter, Activity, TrendingUp, Trophy, Sparkles } from 'lucide-react';
 import { PageTransition, FadeInView } from '../lib/animations';
 import { getDashboardStats, DashboardStats } from '../lib/api';
+import { Badge } from '../components/ui';
 
 const COLORS = ['#0057A8', '#2bc48e', '#f59e0b', '#00407e', '#72a8ff'];
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userPrediction, setUserPrediction] = useState<{ score: number } | null>(null);
   const [filters, setFilters] = useState({
     year: '',
     naturaleza: '',
@@ -21,6 +23,20 @@ export default function Dashboard() {
     bilingue: '',
     jornada: ''
   });
+
+  useEffect(() => {
+    const raw = localStorage.getItem('saber11_prediction');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.score === 'number') {
+          setUserPrediction(parsed);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchStats() {
@@ -172,6 +188,44 @@ export default function Dashboard() {
           </div>
         ) : stats ? (
           <div className="space-y-8">
+            {/* Comparativa de tu Puntaje Proyectado */}
+            {userPrediction && (
+              <FadeInView className="bg-gradient-to-br from-primary-950 via-slate-900 to-indigo-950 rounded-3xl p-6 border border-primary-800 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+                <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-primary-500/10 rounded-full blur-3xl"></div>
+                <div className="absolute left-1/3 bottom-0 w-36 h-36 bg-success-500/5 rounded-full blur-2xl"></div>
+
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 shadow-inner">
+                    <Sparkles className="w-7 h-7 text-success-300 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-extrabold text-xl tracking-tight flex items-center gap-2">
+                      Tu Proyección IA vs Regional
+                      <Badge variant="success" size="sm" className="bg-success-500/25 text-success-300 border-none font-bold">ACTIVA</Badge>
+                    </h3>
+                    <p className="text-sm text-surface-300 mt-1 max-w-lg">
+                      {userPrediction.score >= stats.promedio_global 
+                        ? `¡Excelente! Estás superando el promedio de Bogotá en +${(userPrediction.score - stats.promedio_global).toFixed(0)} puntos.`
+                        : `Estás a ${(stats.promedio_global - userPrediction.score).toFixed(0)} puntos de alcanzar el promedio regional de Bogotá. ¡El Tutor IA te guiará!`
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-6 bg-white/5 rounded-2xl p-4 border border-white/10 w-full md:w-auto shrink-0 justify-around md:justify-start relative z-10">
+                  <div className="text-center">
+                    <p className="text-[10px] uppercase font-bold tracking-wider opacity-75">Tu Estimación</p>
+                    <p className="text-3xl font-heading font-extrabold text-success-400 mt-0.5">{userPrediction.score}</p>
+                  </div>
+                  <div className="w-px h-8 bg-white/20"></div>
+                  <div className="text-center">
+                    <p className="text-[10px] uppercase font-bold tracking-wider opacity-75">Promedio Bogotá</p>
+                    <p className="text-3xl font-heading font-extrabold text-white/95 mt-0.5">{Math.round(stats.promedio_global)}</p>
+                  </div>
+                </div>
+              </FadeInView>
+            )}
+
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FadeInView delay={0.1} className="bg-white rounded-2xl shadow-sm border border-surface-200 p-6 flex items-center gap-5">
