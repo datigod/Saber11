@@ -36,7 +36,7 @@ export function Navbar() {
   return (
     <>
       {/* Top navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-surface-300/50">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-surface-200 shadow-sm">
         <div className="max-w-[1280px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105">
@@ -169,7 +169,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 min-h-[calc(100vh-4rem)] fixed top-16 left-0 border-r border-surface-300/50 bg-white/80 backdrop-blur-lg p-4 gap-1 overflow-y-auto">
+    <aside className="hidden lg:flex flex-col w-64 min-h-[calc(100vh-4rem)] fixed top-16 left-0 border-r border-surface-200 bg-white p-4 gap-1 overflow-y-auto">
       <p className="text-xs font-semibold text-surface-700 uppercase tracking-wider px-3 mb-2 mt-2">
         {isDocente ? 'Panel Docente' : 'Navegación'}
       </p>

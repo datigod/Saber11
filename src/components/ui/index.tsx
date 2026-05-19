@@ -18,17 +18,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-500 hover:bg-primary-600 text-white shadow-md hover:shadow-lg',
-  secondary: 'border-2 border-primary-400 text-primary-500 hover:bg-primary-50',
-  success: 'bg-tertiary-500 hover:bg-tertiary-600 text-white shadow-md',
-  ghost: 'text-surface-700 hover:bg-surface-200 hover:text-surface-900',
+  primary: 'bg-primary-500 hover:bg-primary-600 text-white shadow-md shadow-primary-500/25 hover:shadow-lg hover:shadow-primary-500/40',
+  secondary: 'border-2 border-surface-200 text-surface-800 hover:bg-surface-50 hover:border-surface-300',
+  success: 'bg-tertiary-500 hover:bg-tertiary-600 text-white shadow-md shadow-tertiary-500/25 hover:shadow-lg hover:shadow-tertiary-500/40',
+  ghost: 'text-surface-700 hover:bg-surface-100 hover:text-surface-900',
   danger: 'bg-error text-white hover:opacity-90 shadow-md',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
   sm: 'px-3 py-1.5 text-sm gap-1.5 rounded-lg',
-  md: 'px-5 py-2.5 text-sm gap-2 rounded-lg',
-  lg: 'px-7 py-3.5 text-base gap-2.5 rounded-xl',
+  md: 'px-5 py-2.5 text-sm gap-2 rounded-xl',
+  lg: 'px-7 py-3.5 text-base gap-2.5 rounded-2xl',
 };
 
 export function Button({ variant = 'primary', size = 'md', icon: Icon, iconRight: IconRight, loading, children, className = '', ...props }: ButtonProps) {
@@ -67,18 +67,18 @@ export function Card({ children, className = '', hover = false, accent = 'none',
   const accentMap = {
     none: '',
     primary: 'border-l-4 border-l-primary-500',
-    success: 'border-l-4 border-l-tertiary-400',
+    success: 'border-l-4 border-l-tertiary-500',
     warning: 'border-l-4 border-l-warning',
   };
   const Wrapper = hover ? motion.div : 'div';
   const hoverProps = hover ? {
-    whileHover: { y: -4, boxShadow: '0 4px 16px rgba(0, 87, 168, 0.1)' },
+    whileHover: { y: -4, boxShadow: '0 10px 25px -5px rgba(17, 85, 242, 0.1), 0 8px 10px -6px rgba(17, 85, 242, 0.1)' },
     transition: { type: 'spring', stiffness: 400, damping: 20 },
   } : {};
 
   return (
     <Wrapper
-      className={`bg-white rounded-2xl shadow-sm border border-surface-300/30 ${paddingMap[padding]} ${accentMap[accent]} ${hover ? 'cursor-pointer' : ''} ${className}`}
+      className={`bg-white rounded-3xl shadow-sm border border-surface-200/60 ${paddingMap[padding]} ${accentMap[accent]} ${hover ? 'cursor-pointer' : ''} ${className}`}
       {...(hoverProps as any)}
     >
       {children}
