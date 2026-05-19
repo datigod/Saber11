@@ -12,13 +12,26 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-28">
-        {/* Background blobs */}
-        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-surface-50 to-white -z-20" />
-        <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-primary-200/20 rounded-full blur-3xl -z-10" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-success-200/15 rounded-full blur-3xl -z-10" />
+      <section className="relative overflow-hidden pt-24 pb-16 lg:pt-32 lg:pb-20">
+        {/* Background Elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#F4F8FF] to-white -z-30" />
+        
+        {/* Bottom left blue wave with dots */}
+        <div className="absolute bottom-0 left-0 w-full md:w-1/2 h-1/2 md:h-2/3 -z-20 opacity-70">
+          <div className="absolute bottom-[-20%] left-[-10%] w-[120%] h-[120%] bg-gradient-to-tr from-[#1155F2]/10 to-transparent rounded-tr-[100%]" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#0B2D6B 2px, transparent 2px)', backgroundSize: '20px 20px' }} />
+        </div>
 
-        <div className="max-w-[1280px] mx-auto px-4 md:px-8">
+        {/* Right side background elements */}
+        <div className="absolute top-0 right-0 w-1/3 h-full opacity-[0.03] -z-20" style={{ backgroundImage: 'radial-gradient(#0B2D6B 2px, transparent 2px)', backgroundSize: '20px 20px' }} />
+        
+        {/* Green shape behind mockup */}
+        <div className="absolute top-1/2 right-[5%] lg:right-[10%] w-[400px] h-[400px] lg:w-[600px] lg:h-[600px] -translate-y-[45%] bg-[#8DD400]/20 rounded-[80px] lg:rounded-[120px] rotate-12 -z-10 mix-blend-multiply" />
+        
+        {/* Cyan blur behind mockup */}
+        <div className="absolute top-1/2 right-[15%] w-[500px] h-[500px] -translate-y-[60%] bg-[#22C5F0]/15 rounded-full blur-3xl -z-10" />
+
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             
             {/* Left Column: Copy & CTA */}
@@ -76,10 +89,6 @@ export default function Landing() {
               transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
               className="relative lg:h-[600px] flex items-center justify-center w-full"
             >
-              {/* Decorative blobs for mockup */}
-              <div className="absolute top-10 right-10 w-72 h-72 bg-[#8DD400]/20 rounded-full blur-3xl -z-10" />
-              <div className="absolute bottom-10 left-10 w-72 h-72 bg-[#1155F2]/20 rounded-full blur-3xl -z-10" />
-              
               {/* Main Card */}
               <div className="w-full max-w-[560px] bg-white rounded-[2rem] shadow-2xl border border-surface-100/50 p-6 relative">
                 {/* Header */}
