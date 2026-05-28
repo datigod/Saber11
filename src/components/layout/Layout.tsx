@@ -2,7 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Home, Map, Route, Swords, GraduationCap, User, Trophy, CalendarCheck,
-  BookOpen, School, Building2, Info, Menu, X, Activity, RefreshCw
+  BookOpen, School, Building2, Info, Menu, X, Activity, RefreshCw,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { LogoIcon } from '../ui/LogoIcon';
 import { useState, useEffect } from 'react';
@@ -135,7 +136,7 @@ export function Navbar() {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const location = useLocation();
   const isDocente = location.pathname.startsWith('/docente') || location.pathname.startsWith('/institucional') || location.pathname === '/dashboard';
   const links = isDocente ? docenteLinks : studentLinks;
@@ -170,31 +171,44 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 min-h-[calc(100vh-4rem)] fixed top-16 left-0 border-r border-surface-200 bg-white p-4 gap-1 overflow-y-auto">
-      <p className="text-xs font-semibold text-surface-700 uppercase tracking-wider px-3 mb-2 mt-2">
-        {isDocente ? 'Panel Docente' : 'Navegación'}
-      </p>
+    <aside className={`hidden lg:flex flex-col ${collapsed ? 'w-20' : 'w-64'} min-h-[calc(100vh-4rem)] fixed top-16 left-0 border-r border-surface-200 bg-white p-4 gap-1 overflow-y-auto transition-all duration-300 z-30`}>
+      <div className="flex items-center justify-between px-3 mb-4 mt-2">
+        {!collapsed && (
+          <p className="text-xs font-semibold text-surface-700 uppercase tracking-wider">
+            {isDocente ? 'Panel Docente' : 'Navegación'}
+          </p>
+        )}
+        <button
+          onClick={onToggle}
+          title={collapsed ? "Expandir panel" : "Contraer panel"}
+          className={`w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 bg-surface-50 text-surface-600 hover:bg-surface-100 hover:text-surface-900 transition-colors cursor-pointer ${collapsed ? 'mx-auto' : ''}`}
+        >
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+      </div>
+
       {links.map((l) => {
         const isActive = location.pathname === l.to;
         return (
           <Link
             key={l.to}
             to={l.to}
-            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+            title={collapsed ? l.label : undefined}
+            className={`relative flex items-center ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               isActive
                 ? 'bg-primary-50 text-primary-600'
                 : 'text-surface-700 hover:bg-surface-100 hover:text-surface-900'
             }`}
           >
-            {isActive && (
+            {isActive && !collapsed && (
               <motion.div
                 layoutId="sidebar-active"
                 className="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-primary-500"
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
-            <l.icon className="w-5 h-5" />
-            {l.label}
+            <l.icon className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span>{l.label}</span>}
           </Link>
         );
       })}
@@ -202,19 +216,20 @@ export function Sidebar() {
       {!isDocente && (
         <>
           <div className="h-px bg-surface-300 my-3" />
-          <p className="text-xs font-semibold text-surface-700 uppercase tracking-wider px-3 mb-2">Más</p>
+          {!collapsed && <p className="text-xs font-semibold text-surface-700 uppercase tracking-wider px-3 mb-2">Más</p>}
           {[...docenteLinks, ...extraLinks].map(l => (
             <Link
               key={l.to}
               to={l.to}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              title={collapsed ? l.label : undefined}
+              className={`flex items-center ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 location.pathname === l.to
                   ? 'bg-primary-50 text-primary-600'
                   : 'text-surface-700 hover:bg-surface-100 hover:text-surface-900'
               }`}
             >
-              <l.icon className="w-5 h-5" />
-              {l.label}
+              <l.icon className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span>{l.label}</span>}
             </Link>
           ))}
         </>
@@ -223,40 +238,66 @@ export function Sidebar() {
       {/* Dynamic AI Score Projection Card */}
       <div className="mt-auto pt-4">
         {!isDocente && prediction ? (
-          <motion.div 
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="p-4 rounded-2xl bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 text-white shadow-lg relative overflow-hidden"
-          >
-            <div className="absolute -right-4 -bottom-4 opacity-10">
-              <Activity className="w-20 h-20 text-white" />
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider opacity-90">
-              <span className="w-1.5 h-1.5 rounded-full bg-success-400 animate-ping"></span>
-              Proyección Estimada
-            </div>
-            <div className="flex items-baseline gap-1 mt-1.5">
-              <span className="text-3.5xl font-heading font-extrabold tracking-tight">{prediction.score}</span>
-              <span className="text-xs opacity-75">/ 500 pts</span>
-            </div>
-            <div className="mt-2 w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
-              <div className="h-full bg-success-400" style={{ width: `${(prediction.score / 500) * 100}%` }}></div>
-            </div>
+          collapsed ? (
             <Link
               to="/ruta"
-              className="mt-3 block text-center py-2 px-3 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-xs font-bold rounded-xl border border-white/10"
+              title={`Proyección Estimada: ${prediction.score} / 500 pts`}
+              className="w-12 h-12 mx-auto rounded-full bg-gradient-to-br from-primary-600 to-indigo-850 text-white flex items-center justify-center shadow-md font-heading font-extrabold text-sm relative group"
             >
-              🗺️ Ver Mi Ruta
+              {prediction.score}
+              <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-[#090d13] text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity font-sans font-normal z-50 shadow-md border border-[#21262d] whitespace-nowrap">
+                Proyección: {prediction.score} pts
+              </div>
             </Link>
-          </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="p-4 rounded-2xl bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 text-white shadow-lg relative overflow-hidden"
+            >
+              <div className="absolute -right-4 -bottom-4 opacity-10">
+                <Activity className="w-20 h-20 text-white" />
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider opacity-90">
+                <span className="w-1.5 h-1.5 rounded-full bg-success-400 animate-ping"></span>
+                Proyección Estimada
+              </div>
+              <div className="flex items-baseline gap-1 mt-1.5">
+                <span className="text-3.5xl font-heading font-extrabold tracking-tight">{prediction.score}</span>
+                <span className="text-xs opacity-75">/ 500 pts</span>
+              </div>
+              <div className="mt-2 w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
+                <div className="h-full bg-success-400" style={{ width: `${(prediction.score / 500) * 100}%` }}></div>
+              </div>
+              <Link
+                to="/ruta"
+                className="mt-3 block text-center py-2 px-3 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-xs font-bold rounded-xl border border-white/10"
+              >
+                🗺️ Ver Mi Ruta
+              </Link>
+            </motion.div>
+          )
         ) : (
-          <Link
-            to="/onboarding"
-            className="block w-full p-4 rounded-xl gradient-primary text-white text-center shadow-lg hover:shadow-xl transition-shadow"
-          >
-            <p className="font-heading font-bold text-sm">🎯 Predecir puntaje</p>
-            <p className="text-xs opacity-80 mt-1">Usa nuestro modelo predictivo</p>
-          </Link>
+          collapsed ? (
+            <Link
+              to="/onboarding"
+              title="Predecir puntaje"
+              className="w-12 h-12 mx-auto rounded-full bg-primary-500 text-white flex items-center justify-center shadow-md hover:scale-105 transition-transform group relative"
+            >
+              🎯
+              <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-[#090d13] text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity font-sans font-normal z-50 shadow-md border border-[#21262d] whitespace-nowrap">
+                Predecir puntaje
+              </div>
+            </Link>
+          ) : (
+            <Link
+              to="/onboarding"
+              className="block w-full p-4 rounded-xl gradient-primary text-white text-center shadow-lg hover:shadow-xl transition-shadow"
+            >
+              <p className="font-heading font-bold text-sm">🎯 Predecir puntaje</p>
+              <p className="text-xs opacity-80 mt-1">Usa nuestro modelo predictivo</p>
+            </Link>
+          )
         )}
       </div>
     </aside>
