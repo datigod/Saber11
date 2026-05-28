@@ -2,14 +2,35 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UploadCloud, Terminal, FileText, CheckCircle2, AlertTriangle, 
-  ArrowRight, Play, BarChart3, RefreshCw, Layers, Database, Sparkles
+  ArrowRight, Play, BarChart3, RefreshCw, Layers, Database, Sparkles,
+  HelpCircle, ChevronDown, ChevronUp, Download, Check, X, ShieldCheck
 } from 'lucide-react';
 import { 
   uploadDataset, getTrainingStatus, resetTrainingStatus, TrainingState 
 } from '../lib/api';
 import { Card, Button, ProgressBar, Badge } from '../components/ui';
-import { PageTransition, FadeInView, staggerContainer, staggerItem } from '../lib/animations';
+import { PageTransition, FadeInView } from '../lib/animations';
 import { useNavigate } from 'react-router-dom';
+
+// Lista de columnas clave para el verificador
+interface ColumnSpec {
+  name: string;
+  type: string;
+  desc: string;
+  required: boolean;
+  sample: string;
+}
+
+const requiredColumnsList: ColumnSpec[] = [
+  { name: 'PUNT_GLOBAL', type: 'Numérico (0-500)', desc: 'Puntaje global obtenido (Variable objetivo)', required: true, sample: '285' },
+  { name: 'COLE_DEPTO_UBICACION', type: 'Texto', desc: 'Departamento de ubicación (se filtra "BOGOTA")', required: true, sample: 'BOGOTA' },
+  { name: 'ESTU_GENERO', type: "Texto ('F' / 'M')", desc: 'Género del estudiante', required: true, sample: 'F' },
+  { name: 'FAMI_ESTRATOVIVIENDA', type: 'Texto (Ej: "Estrato 3")', desc: 'Estrato residential socioeconómico', required: true, sample: 'Estrato 3' },
+  { name: 'COLE_COD_DANE_ESTABLECIMIENTO', type: 'Numérico', desc: 'Código DANE del colegio para promedios', required: true, sample: '111001012345' },
+  { name: 'COLE_NATURALEZA', type: 'Texto', desc: 'Naturaleza ("OFICIAL" o "NO OFICIAL")', required: true, sample: 'OFICIAL' },
+  { name: 'FAMI_TIENECOMPUTADOR', type: 'Texto ("SI" / "NO")', desc: 'Disponibilidad de computador', required: true, sample: 'SI' },
+  { name: 'PERIODO', type: 'Numérico (Ej: 20241)', desc: 'Periodo de presentación', required: false, sample: '20241' },
+];
 
 const stepsList = [
   { id: 'upload', label: 'Carga de CSV', icon: UploadCloud },
@@ -26,6 +47,16 @@ export default function UpdateCenter() {
   
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [showSpecs, setShowSpecs] = useState(false);
+  
+  // Escáner de cabeceras en el cliente
+  const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
+  const [validationResults, setValidationResults] = useState<{
+    valid: boolean;
+    present: string[];
+    missing: string[];
+  }>({ valid: false, present: [], missing: [] });
+  
   const [trainingState, setTrainingState] = useState<TrainingState>({
     status: 'idle',
     progress: 0,
@@ -84,6 +115,42 @@ export default function UpdateCenter() {
     }
   }, [trainingState.logs]);
 
+  // Analizar archivo seleccionado en el cliente para extraer cabeceras
+  const analyzeCSVFile = (selectedFile: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) return;
+      
+      // Obtener la primera línea (cabeceras)
+      const firstLine = text.split('\n')[0] || '';
+      // Separar por coma o punto y coma
+      const delimiter = firstLine.includes(';') ? ';' : ',';
+      const headers = firstLine.split(delimiter).map(h => h.replace(/["'\r]/g, '').trim().toUpperCase());
+      
+      setDetectedHeaders(headers);
+      
+      // Validar cabeceras requeridas
+      const requiredNames = requiredColumnsList.filter(c => c.required).map(c => c.name);
+      const present = requiredNames.filter(name => headers.includes(name));
+      const missing = requiredNames.filter(name => !headers.includes(name));
+      
+      setValidationResults({
+        valid: missing.length === 0,
+        present,
+        missing
+      });
+      
+      if (missing.length > 0) {
+        setErrorMsg(`Advertencia: Faltan columnas críticas en el CSV (${missing.join(', ')}). Esto podría fallar en el entrenamiento.`);
+      } else {
+        setErrorMsg(null);
+      }
+    };
+    // Leer solo los primeros 10KB para rapidez total
+    reader.readAsText(selectedFile.slice(0, 10240));
+  };
+
   // Manejo de drag and drop
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -104,7 +171,7 @@ export default function UpdateCenter() {
       const droppedFile = e.dataTransfer.files[0];
       if (droppedFile.name.endsWith('.csv')) {
         setFile(droppedFile);
-        setErrorMsg(null);
+        analyzeCSVFile(droppedFile);
       } else {
         setErrorMsg("El archivo seleccionado debe tener extensión .csv");
       }
@@ -116,11 +183,39 @@ export default function UpdateCenter() {
       const selectedFile = e.target.files[0];
       if (selectedFile.name.endsWith('.csv')) {
         setFile(selectedFile);
-        setErrorMsg(null);
+        analyzeCSVFile(selectedFile);
       } else {
         setErrorMsg("El archivo seleccionado debe tener extensión .csv");
       }
     }
+  };
+
+  // Generar y descargar plantilla CSV de ejemplo al vuelo
+  const downloadCSVEjemplo = () => {
+    const headers = [
+      'PERIODO', 'ESTU_TIPODOCUMENTO', 'ESTU_CONSECUTIVO', 'COLE_COD_DANE_ESTABLECIMIENTO', 
+      'COLE_DEPTO_UBICACION', 'COLE_NATURALEZA', 'COLE_JORNADA', 'COLE_CALENDARIO', 
+      'COLE_BILINGUE', 'COLE_CARACTER', 'ESTU_GENERO', 'FAMI_ESTRATOVIVIENDA', 
+      'FAMI_TIENECOMPUTADOR', 'FAMI_TIENEINTERNET', 'FAMI_TIENELAVADORA', 'FAMI_TIENEAUTOMOVIL', 
+      'PUNT_INGLES', 'PUNT_MATEMATICAS', 'PUNT_SOCIALES_CIUDADANAS', 'PUNT_C_NATURALES', 
+      'PUNT_LECTURA_CRITICA', 'PUNT_GLOBAL'
+    ];
+    
+    const rows = [
+      ['20241', 'TI', 'EK2024100123', '111001015678', 'BOGOTA', 'OFICIAL', 'COMPLETA', 'A', 'N', 'ACADEMICO', 'F', 'Estrato 3', 'SI', 'SI', 'SI', 'NO', '72', '65', '68', '62', '64', '325'],
+      ['20241', 'CC', 'EK2024100124', '111001018999', 'BOGOTA', 'NO OFICIAL', 'MAÑANA', 'A', 'S', 'ACADEMICO', 'M', 'Estrato 4', 'SI', 'SI', 'SI', 'SI', '88', '78', '75', '70', '72', '378'],
+      ['20241', 'TI', 'EK2024100125', '111001020000', 'BOGOTA', 'OFICIAL', 'TARDE', 'A', 'N', 'TECNICO', 'F', 'Estrato 2', 'NO', 'SI', 'NO', 'NO', '55', '58', '52', '56', '54', '268']
+    ];
+    
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "plantilla_saber11_reentrenamiento.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Iniciar la subida e hilo de reentrenamiento
@@ -128,7 +223,6 @@ export default function UpdateCenter() {
     if (!file) return;
     
     try {
-      setErrorMsg(null);
       setTrainingState(prev => ({
         ...prev,
         status: 'processing',
@@ -137,7 +231,7 @@ export default function UpdateCenter() {
         logs: [`[${new Date().toLocaleTimeString()}] Preparando carga de archivo ${file.name}...`]
       }));
       
-      const response = await uploadDataset(file);
+      await uploadDataset(file);
       
       // Consultar inmediatamente el primer estado
       const initialStatus = await getTrainingStatus();
@@ -154,6 +248,8 @@ export default function UpdateCenter() {
     try {
       await resetTrainingStatus();
       setFile(null);
+      setDetectedHeaders([]);
+      setValidationResults({ valid: false, present: [], missing: [] });
       setErrorMsg(null);
       setTrainingState({
         status: 'idle',
@@ -214,15 +310,16 @@ export default function UpdateCenter() {
                 <Badge variant="primary" size="sm">Docente / Administrador</Badge>
                 {isFinished && <Badge variant="success" size="sm">Base de datos al día</Badge>}
               </div>
-              <h1 className="text-3.5xl font-heading font-extrabold text-surface-900 tracking-tight">
-                Centro de Actualización Anual
+              <h1 className="text-3.5xl font-heading font-extrabold text-surface-900 tracking-tight flex items-center gap-2">
+                <RefreshCw className={`w-8 h-8 text-primary-500 ${isRunning ? 'animate-spin' : ''}`} />
+                Actualización Anual
               </h1>
               <p className="text-surface-700 text-base mt-1.5 max-w-xl">
-                Carga el dataset anual Saber 11 regional o nacional para refrescar las estadísticas del dashboard y reajustar los pesos predictivos del modelo de IA en caliente.
+                Carga el dataset anual en CSV para refrescar las estadísticas del panel de control y entrenar el modelo CatBoost en caliente.
               </p>
             </div>
             {isRunning && (
-              <div className="flex items-center gap-2.5 px-4 py-2 bg-primary-50 rounded-2xl border border-primary-200">
+              <div className="flex items-center gap-2.5 px-4 py-2 bg-primary-50 rounded-2xl border border-primary-200 shadow-sm">
                 <RefreshCw className="w-5 h-5 text-primary-500 animate-spin" />
                 <span className="text-sm font-semibold text-primary-700">Entrenamiento activo</span>
               </div>
@@ -230,16 +327,93 @@ export default function UpdateCenter() {
           </div>
         </FadeInView>
 
-        {/* Alerta de Error */}
+        {/* Acordeón de Especificación del Formato CSV (Mejorado y Dinámico) */}
+        <div className="mb-6">
+          <Card padding="sm" className="border border-primary-100 bg-gradient-to-r from-primary-50/20 to-white">
+            <button 
+              onClick={() => setShowSpecs(!showSpecs)}
+              className="w-full flex items-center justify-between p-2 text-left focus:outline-none cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5 text-primary-700">
+                <HelpCircle className="w-5 h-5 text-primary-500" />
+                <span className="font-heading font-bold text-sm">Ver Especificación del Formato CSV Requerido</span>
+              </div>
+              <div className="text-primary-500">
+                {showSpecs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {showSpecs && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 border-t border-surface-200 mt-2 space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <p className="text-xs text-surface-750">
+                        El archivo debe ser un CSV separado por comas (<code>,</code>) o puntos y comas (<code>;</code>) conteniendo cabeceras idénticas en la primera línea.
+                      </p>
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        icon={Download}
+                        onClick={downloadCSVEjemplo}
+                        className="text-xs"
+                      >
+                        Descargar Plantilla CSV
+                      </Button>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-xl border border-surface-250 bg-white">
+                      <table className="min-w-full divide-y divide-surface-200 text-left font-mono text-[11px]">
+                        <thead className="bg-surface-100 text-surface-700 font-sans font-bold">
+                          <tr>
+                            <th className="p-3">Nombre Columna</th>
+                            <th className="p-3">Tipo de Dato</th>
+                            <th className="p-3">Descripción</th>
+                            <th className="p-3 text-center">Estado</th>
+                            <th className="p-3">Ejemplo</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-surface-200 text-surface-800">
+                          {requiredColumnsList.map((col, idx) => (
+                            <tr key={idx} className="hover:bg-surface-50">
+                              <td className="p-3 font-bold text-primary-650">{col.name}</td>
+                              <td className="p-3 text-surface-600">{col.type}</td>
+                              <td className="p-3 font-sans leading-normal">{col.desc}</td>
+                              <td className="p-3 text-center">
+                                {col.required ? (
+                                  <Badge variant="error" size="sm" className="lowercase">crítico</Badge>
+                                ) : (
+                                  <Badge variant="neutral" size="sm" className="lowercase">opcional</Badge>
+                                )}
+                              </td>
+                              <td className="p-3 text-surface-650">{col.sample}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Card>
+        </div>
+
+        {/* Alerta de Error / Advertencia */}
         {errorMsg && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-2xl bg-error-50 border border-error/20 flex gap-3.5 items-start text-error"
+            className="mb-6 p-4 rounded-2xl bg-error-50 border border-error/20 flex gap-3.5 items-start text-error shadow-sm"
           >
             <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div className="flex-1 text-sm">
-              <span className="font-bold">Error en la actualización: </span>
+              <span className="font-bold">Estado del archivo: </span>
               {errorMsg}
             </div>
             {isError && (
@@ -263,8 +437,9 @@ export default function UpdateCenter() {
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
+                  className="space-y-6"
                 >
-                  <Card accent="primary" className="overflow-hidden">
+                  <Card accent="primary" className="overflow-hidden shadow-md">
                     <h3 className="font-heading font-bold text-lg text-surface-900 mb-4">Cargar Archivo Saber 11</h3>
                     
                     {/* Drag and Drop Zone */}
@@ -276,7 +451,7 @@ export default function UpdateCenter() {
                       onClick={() => fileInputRef.current?.click()}
                       className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
                         dragActive 
-                          ? 'border-primary-500 bg-primary-50/50 scale-[0.99]' 
+                          ? 'border-primary-500 bg-primary-50/50 scale-[0.99] shadow-lg shadow-primary-100' 
                           : file 
                             ? 'border-tertiary-400 bg-tertiary-50/20' 
                             : 'border-surface-300 hover:border-primary-400 hover:bg-surface-50'
@@ -290,8 +465,8 @@ export default function UpdateCenter() {
                         className="hidden" 
                       />
                       <div className="flex flex-col items-center justify-center">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
-                          file ? 'bg-tertiary-100 text-tertiary-600' : 'bg-primary-50 text-primary-500'
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 ${
+                          file ? 'bg-tertiary-100 text-tertiary-600 scale-105' : 'bg-primary-50 text-primary-500'
                         }`}>
                           <UploadCloud className="w-7 h-7" />
                         </div>
@@ -303,13 +478,13 @@ export default function UpdateCenter() {
                             <p className="text-xs text-surface-700 mt-1">
                               {(file.size / (1024 * 1024)).toFixed(2)} MB
                             </p>
-                            <Badge variant="success" className="mt-3.5">Archivo listo</Badge>
+                            <Badge variant="success" className="mt-3.5">Archivo verificado</Badge>
                           </>
                         ) : (
                           <>
                             <p className="font-heading font-bold text-sm text-surface-900">Arrastra tu archivo CSV aquí</p>
                             <p className="text-xs text-surface-600 mt-1.5 px-4">
-                              Formatos compatibles: Resultados ICFES Saber 11 (.csv)
+                              Haz clic para explorar en el disco local (.csv)
                             </p>
                           </>
                         )}
@@ -321,6 +496,7 @@ export default function UpdateCenter() {
                         <Button 
                           className="w-full shadow-lg"
                           icon={Play}
+                          disabled={!validationResults.valid && detectedHeaders.length > 0}
                           onClick={handleStartRetraining}
                         >
                           Iniciar Reentrenamiento
@@ -328,23 +504,58 @@ export default function UpdateCenter() {
                         <Button 
                           className="w-full" 
                           variant="secondary"
-                          onClick={() => { setFile(null); setErrorMsg(null); }}
+                          onClick={() => { setFile(null); setDetectedHeaders([]); setErrorMsg(null); }}
                         >
-                          Cancelar
+                          Remover Archivo
                         </Button>
                       </div>
                     )}
                   </Card>
 
-                  {/* Informacion de Requisitos */}
-                  <div className="mt-6">
-                    <Card padding="sm" className="bg-surface-50 border border-surface-200">
-                      <h4 className="text-xs font-bold text-surface-800 uppercase tracking-wider mb-2">Requisitos de Datos</h4>
-                      <p className="text-xs text-surface-700 leading-relaxed">
-                        El archivo CSV debe contener campos estándar de las pruebas oficiales Saber 11. Se requiere obligatoriamente el campo <span className="font-mono text-primary-600 font-bold">PUNT_GLOBAL</span> para guiar el aprendizaje de la IA y el campo <span className="font-mono text-primary-600 font-bold">COLE_DEPTO_UBICACION</span> o <span className="font-mono text-primary-600 font-bold">ESTU_DEPTO_RESIDE</span> para aislar las variables de la capital (Bogotá).
-                      </p>
-                    </Card>
-                  </div>
+                  {/* Escáner de Archivo y Validador Dinámico en Caliente */}
+                  {file && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <Card className="border border-surface-200">
+                        <div className="flex items-center gap-2 mb-3 text-surface-900">
+                          <ShieldCheck className="w-5 h-5 text-primary-500" />
+                          <h4 className="font-heading font-bold text-sm">Validador de Cabeceras</h4>
+                        </div>
+                        
+                        <p className="text-xs text-surface-700 leading-normal mb-3.5">
+                          Analizando estructura de columnas en tiempo real...
+                        </p>
+
+                        <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                          {requiredColumnsList.map((col, idx) => {
+                            const hasCol = detectedHeaders.includes(col.name);
+                            return (
+                              <div key={idx} className="flex items-center justify-between text-xs py-1.5 border-b border-surface-100 last:border-0">
+                                <span className="font-mono font-bold text-surface-850">{col.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                  {hasCol ? (
+                                    <span className="flex items-center gap-1 text-[10px] text-tertiary-600 font-bold uppercase tracking-wide bg-tertiary-50 px-2 py-0.5 rounded-full border border-tertiary-100">
+                                      <Check className="w-3 h-3 text-tertiary-500" /> presente
+                                    </span>
+                                  ) : col.required ? (
+                                    <span className="flex items-center gap-1 text-[10px] text-error font-bold uppercase tracking-wide bg-red-50 px-2 py-0.5 rounded-full border border-red-100 animate-pulse">
+                                      <X className="w-3 h-3 text-error" /> faltante
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-surface-600 font-bold uppercase tracking-wide bg-surface-100 px-2 py-0.5 rounded-full border border-surface-200">
+                                      opcional
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
+                    </motion.div>
+                  )}
                 </motion.div>
               ) : (
                 // Stepper de progreso (Processing/Success)
@@ -355,12 +566,12 @@ export default function UpdateCenter() {
                   exit={{ opacity: 0, scale: 0.98 }}
                   className="space-y-4"
                 >
-                  <Card>
+                  <Card className="shadow-md">
                     <h3 className="font-heading font-bold text-lg text-surface-900 mb-5">Estado de la Tarea</h3>
                     
                     {/* Stepper Vertical */}
                     <div className="relative pl-6 space-y-7 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-200">
-                      {stepsList.map((step, i) => {
+                      {stepsList.map((step: { id: string; label: string; icon: any }, i: number) => {
                         const stepStatus = getStepStatus(step.id);
                         return (
                           <div key={step.id} className="relative flex items-center gap-3 text-left">
@@ -381,7 +592,7 @@ export default function UpdateCenter() {
                             
                             <step.icon className={`w-5 h-5 flex-shrink-0 ${
                               stepStatus === 'completed' 
-                                ? 'text-tertiary-500' 
+                                ? 'text-tertiary-500 animate-bounce' 
                                 : stepStatus === 'active' 
                                   ? 'text-primary-500' 
                                   : 'text-surface-500'
@@ -392,13 +603,13 @@ export default function UpdateCenter() {
                                 stepStatus === 'completed' 
                                   ? 'text-tertiary-600' 
                                   : stepStatus === 'active' 
-                                    ? 'text-primary-600' 
+                                    ? 'text-primary-600 font-extrabold' 
                                     : 'text-surface-600'
                               }`}>
                                 {step.label}
                               </p>
                               {stepStatus === 'active' && (
-                                <p className="text-[10px] text-primary-500 font-semibold animate-pulse mt-0.5">
+                                <p className="text-[10px] text-primary-550 font-semibold animate-pulse mt-0.5">
                                   {trainingState.message || "Procesando..."}
                                 </p>
                               )}
@@ -435,7 +646,7 @@ export default function UpdateCenter() {
                   exit={{ opacity: 0, y: -15 }}
                   className="space-y-6"
                 >
-                  <Card accent="success" className="bg-gradient-to-br from-white via-white to-tertiary-50/20">
+                  <Card accent="success" className="bg-gradient-to-br from-white via-white to-tertiary-50/20 shadow-lg">
                     <div className="flex flex-col items-center text-center py-4">
                       <div className="w-16 h-16 rounded-2xl bg-tertiary-100 flex items-center justify-center mb-4 text-tertiary-500 shadow-md">
                         <CheckCircle2 className="w-8 h-8" />
@@ -514,16 +725,16 @@ export default function UpdateCenter() {
                         </span>
                       </div>
                       <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-error/80" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-error/80 animate-pulse" />
                         <div className="w-2.5 h-2.5 rounded-full bg-warning/80" />
                         <div className="w-2.5 h-2.5 rounded-full bg-tertiary-500/80" />
                       </div>
                     </div>
 
                     {/* Consola de logs */}
-                    <div className="p-5 h-[340px] overflow-y-auto font-mono text-xs text-surface-300 leading-relaxed space-y-2 bg-[#090d13]">
+                    <div className="p-5 h-[360px] overflow-y-auto font-mono text-xs text-surface-300 leading-relaxed space-y-2 bg-[#090d13]">
                       {trainingState.logs.length === 0 ? (
-                        <div className="text-surface-700 italic select-none py-12 text-center flex flex-col items-center justify-center">
+                        <div className="text-surface-700 italic select-none py-14 text-center flex flex-col items-center justify-center">
                           <Terminal className="w-12 h-12 text-surface-850 mb-3" />
                           Esperando el inicio del proceso para registrar logs...
                         </div>
@@ -535,7 +746,7 @@ export default function UpdateCenter() {
                           } else if (log.includes("exitoso") || log.includes("éxito")) {
                             colorClass = "text-tertiary-400 font-bold";
                           } else if (log.includes("Paso")) {
-                            colorClass = "text-primary-400 font-bold mt-3";
+                            colorClass = "text-primary-400 font-bold mt-3 border-b border-primary-500/10 pb-0.5";
                           }
                           return (
                             <div key={i} className={`whitespace-pre-wrap ${colorClass}`}>
