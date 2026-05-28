@@ -119,7 +119,7 @@ export default function PracticeQuestion() {
                 whileHover={!answered ? { scale: 1.01 } : {}}
                 whileTap={!answered ? { scale: 0.99 } : {}}
                 onClick={() => !answered && setSelected(opt.id)}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer select-none ${
                   isCorrect ? 'border-tertiary-400 bg-tertiary-50' :
                   isWrong ? 'border-error bg-red-50' :
                   isSelected && !answered ? 'border-primary-500 bg-primary-50' :

@@ -141,26 +141,28 @@ export default function Onboarding() {
   ];
 
   const EduChipsField = ({ label, name }: { label: string, name: keyof PredictionFeatures }) => (
-    <div>
-      <label className="block font-semibold text-surface-900 mb-3">{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {eduOptions.map(opt => {
-          const isSelected = features[name] === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => updateFeature(name, opt.value)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                isSelected 
-                  ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20 scale-105' 
-                  : 'bg-white border border-surface-200 text-surface-600 hover:border-primary-300 hover:bg-surface-50'
-              }`}
-            >
+    <div className="flex flex-col gap-2">
+      <label className="block font-semibold text-surface-900 text-sm sm:text-base">{label}</label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <GraduationCap className="w-5 h-5 text-primary-500" />
+        </div>
+        <select
+          value={features[name]}
+          onChange={(e) => updateFeature(name, Number(e.target.value))}
+          className="w-full pl-11 pr-10 py-3 rounded-2xl border border-surface-200 bg-white text-surface-800 font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 hover:border-surface-300 appearance-none cursor-pointer shadow-sm"
+        >
+          {eduOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>
               {opt.label}
-            </button>
-          );
-        })}
+            </option>
+          ))}
+        </select>
+        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-surface-500">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
     </div>
   );

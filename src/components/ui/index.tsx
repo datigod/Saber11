@@ -176,7 +176,7 @@ export function ProgressBar({ value, max = 100, label, showValue = true, size = 
           {showValue && <span className="text-xs font-semibold text-surface-800">{Math.round(pct)}%</span>}
         </div>
       )}
-      <div className={`w-full rounded-full bg-primary-50 overflow-hidden ${size === 'sm' ? 'h-1.5' : 'h-2.5'}`}>
+      <div className={`w-full rounded-full bg-surface-200 overflow-hidden ${size === 'sm' ? 'h-1.5' : 'h-2.5'}`}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}

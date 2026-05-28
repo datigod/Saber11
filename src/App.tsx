@@ -23,6 +23,7 @@ import TeacherGuide from './pages/TeacherGuide';
 import TeacherPanel from './pages/TeacherPanel';
 import InstitutionalPanel from './pages/InstitutionalPanel';
 import About from './pages/About';
+import UpdateCenter from './pages/UpdateCenter';
 
 export default function App() {
   const location = useLocation();
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="/habitos" element={<Habits />} />
               <Route path="/docente" element={<TeacherGuide />} />
               <Route path="/docente/panel" element={<TeacherPanel />} />
+              <Route path="/docente/actualizacion" element={<UpdateCenter />} />
               <Route path="/institucional" element={<InstitutionalPanel />} />
               <Route path="/sobre" element={<About />} />
             </Routes>

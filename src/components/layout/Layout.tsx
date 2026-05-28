@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Home, Map, Route, Swords, GraduationCap, User, Trophy, CalendarCheck,
-  BookOpen, School, Building2, Info, Menu, X, Activity
+  BookOpen, School, Building2, Info, Menu, X, Activity, RefreshCw
 } from 'lucide-react';
 import { LogoIcon } from '../ui/LogoIcon';
 import { useState, useEffect } from 'react';
@@ -23,6 +23,7 @@ const docenteLinks = [
   { to: '/docente', label: 'Orientación', icon: GraduationCap },
   { to: '/docente/panel', label: 'Panel Docente', icon: School },
   { to: '/institucional', label: 'Institucional', icon: Building2 },
+  { to: '/docente/actualizacion', label: 'Actualización Anual', icon: RefreshCw },
 ];
 
 const extraLinks = [
